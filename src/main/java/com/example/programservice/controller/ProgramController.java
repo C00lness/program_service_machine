@@ -1,5 +1,6 @@
 package com.example.programservice.controller;
 
+import com.example.programservice.kafka.ProgramEventProducer;
 import com.example.programservice.model.Program;
 import com.example.programservice.repository.ProgramRepository;
 import org.springframework.http.ResponseEntity;
@@ -12,9 +13,10 @@ import java.util.List;
 public class ProgramController {
 
     private final ProgramRepository programRepository;
-
-    public ProgramController(ProgramRepository programRepository) {
+    private final ProgramEventProducer programEventProducer;
+    public ProgramController(ProgramRepository programRepository, ProgramEventProducer programEventProducer) {
         this.programRepository = programRepository;
+        this.programEventProducer = programEventProducer;
     }
 
     // GET /api/programs — получить все программы
@@ -34,6 +36,9 @@ public class ProgramController {
     // POST /api/programs — создать новую программу
     @PostMapping
     public Program create(@RequestBody Program program) {
+        Program saved = programRepository.save(program);
+        programEventProducer.sendProgramCreatedEvent(saved.getId(),
+                saved.getName(), saved.getCreatedBy());
         return programRepository.save(program);
     }
 
