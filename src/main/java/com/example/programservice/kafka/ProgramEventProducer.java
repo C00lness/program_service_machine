@@ -20,7 +20,7 @@ public class ProgramEventProducer {
                 programId, programName, createdBy
         );
         kafkaTemplate.send(TOPIC, message);
-        System.out.println("📤 Событие отправлено в Kafka: " + message);
+        System.out.println("Kafka send: " + message);
     }
 }
 
