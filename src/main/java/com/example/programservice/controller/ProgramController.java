@@ -4,6 +4,7 @@ import com.example.programservice.kafka.ProgramEventProducer;
 import com.example.programservice.model.Program;
 import com.example.programservice.repository.ProgramRepository;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -14,9 +15,12 @@ public class ProgramController {
 
     private final ProgramRepository programRepository;
     private final ProgramEventProducer programEventProducer;
-    public ProgramController(ProgramRepository programRepository, ProgramEventProducer programEventProducer) {
+    private final SimpMessagingTemplate messagingTemplate;
+
+    public ProgramController(ProgramRepository programRepository, ProgramEventProducer programEventProducer, SimpMessagingTemplate messagingTemplate) {
         this.programRepository = programRepository;
         this.programEventProducer = programEventProducer;
+        this.messagingTemplate = messagingTemplate;
     }
 
     // GET /api/programs — получить все программы
@@ -37,9 +41,14 @@ public class ProgramController {
     @PostMapping
     public Program create(@RequestBody Program program) {
         Program saved = programRepository.save(program);
-        programEventProducer.sendProgramCreatedEvent(saved.getId(),
-                saved.getName(), saved.getCreatedBy());
-        return programRepository.save(program);
+        messagingTemplate.convertAndSend("/topic/programs", saved);
+        try{
+            programEventProducer.sendProgramCreatedEvent(saved.getId(), saved.getName(), saved.getCreatedBy());
+        } catch (Exception e) {
+            System.err.println("Has not send Kafka message: " + e.getMessage());
+        }
+
+        return saved;
     }
 
     // PUT /api/programs/{id} — обновить программу
