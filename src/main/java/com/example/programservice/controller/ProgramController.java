@@ -45,7 +45,7 @@ public class ProgramController {
         try{
             programEventProducer.sendProgramCreatedEvent(saved.getId(), saved.getName(), saved.getCreatedBy());
         } catch (Exception e) {
-            System.err.println("Has not send Kafka message: " + e.getMessage());
+            System.err.println("Has not send Kafka message, error: " + e.getMessage());
         }
 
         return saved;
